@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מתי אני מקבלת את הטלפון הראשון שלי?</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Varela+Round&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --mila: #FF6B9D;
+    --mila-light: #FFE0EE;
+    --mila-dark: #d44d7e;
+    --libi: #6B9DFF;
+    --libi-light: #E0EEFF;
+    --libi-dark: #4d7ed4;
+    --bg: #FFF9F0;
+    --text: #2D2640;
+    --gray: #9E9BAD;
+    --card: #FFFFFF;
+    --success: #4CAF50;
+    --danger: #FF5252;
+    --shadow: 0 8px 32px rgba(45,38,64,0.10);
+    --radius: 24px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Varela Round', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+
+.header { background: linear-gradient(135deg, var(–mila) 0%, var(–libi) 100%); padding: 24px 20px 20px; text-align: center; position: relative; overflow: hidden; }
+.header::before { content: ‘’; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,0.12); }
+.header::after  { content: ‘’; position: absolute; bottom: -60px; left: -30px; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+.header .eyebrow { font-family: ‘Varela Round’, sans-serif; font-size: 12px; color: rgba(255,255,255,0.85); letter-spacing: 2px; text-transform: uppercase; position: relative; z-index: 1; margin-bottom: 4px; }
+.header h1 { font-family: ‘Fredoka One’, cursive; font-size: 26px; color: white; position: relative; z-index: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.15); line-height: 1.2; }
+.header .subtitle { color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 4px; position: relative; z-index: 1; }
+.today-badge { display: inline-block; background: rgba(255,255,255,0.25); color: white; border-radius: 20px; padding: 4px 14px; font-size: 13px; margin-top: 10px; position: relative; z-index: 1; }
+
+.tabs { display: flex; margin: 20px 16px 0; background: white; border-radius: 16px; padding: 4px; box-shadow: var(–shadow); }
+.tab { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 12px; font-family: ‘Fredoka One’, cursive; font-size: 20px; cursor: pointer; transition: all 0.3s; color: var(–gray); }
+.tab.active-mila { background: var(–mila-light); color: var(–mila); }
+.tab.active-libi  { background: var(–libi-light);  color: var(–libi); }
+
+.content { padding: 16px; }
+.girl-card { background: var(–card); border-radius: var(–radius); box-shadow: var(–shadow); overflow: hidden; display: none; }
+.card-header { padding: 24px 24px 20px; text-align: center; }
+.card-header.mila { background: linear-gradient(160deg, var(–mila-light) 0%, #fff 100%); }
+.card-header.libi { background: linear-gradient(160deg, var(–libi-light) 0%, #fff 100%); }
+.girl-name { font-family: ‘Fredoka One’, cursive; font-size: 36px; line-height: 1; }
+.mila .girl-name { color: var(–mila); }
+.libi .girl-name  { color: var(–libi); }
+.phone-emoji { font-size: 48px; display: block; margin: 8px 0; animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.date-label { font-size: 13px; color: var(–gray); margin: 12px 0 4px; }
+.date-big { font-family: ‘Fredoka One’, cursive; font-size: 28px; line-height: 1.2; }
+.mila .date-big { color: var(–mila-dark); }
+.libi .date-big { color: var(–libi-dark); }
+
+.stats-row { display: flex; gap: 10px; margin: 16px 24px; }
+.stat-box { flex: 1; border-radius: 16px; padding: 14px 10px; text-align: center; }
+.mila .stat-box { background: var(–mila-light); }
+.libi .stat-box  { background: var(–libi-light); }
+.stat-number { font-family: ‘Fredoka One’, cursive; font-size: 30px; line-height: 1; }
+.mila .stat-number { color: var(–mila); }
+.libi .stat-number { color: var(–libi); }
+.stat-label { font-size: 11px; color: var(–gray); margin-top: 4px; line-height: 1.3; }
+
+.progress-section { padding: 0 24px 20px; }
+.progress-label { font-size: 12px; color: var(–gray); margin-bottom: 8px; display: flex; justify-content: space-between; }
+.progress-bar { height: 12px; background: #F0EEF5; border-radius: 6px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 6px; transition: width 0.6s cubic-bezier(.34,1.56,.64,1); }
+.mila .progress-fill { background: linear-gradient(90deg, var(–mila-light), var(–mila)); }
+.libi .progress-fill  { background: linear-gradient(90deg, var(–libi-light), var(–libi)); }
+
+.actions { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.btn { width: 100%; padding: 16px; border: none; border-radius: 16px; font-family: ‘Varela Round’, sans-serif; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn:active { transform: scale(0.97); }
+.btn-practice-mila { background: linear-gradient(135deg, var(–mila), var(–mila-dark)); color: white; box-shadow: 0 4px 16px rgba(255,107,157,0.4); }
+.btn-practice-libi  { background: linear-gradient(135deg, var(–libi), var(–libi-dark)); color: white; box-shadow: 0 4px 16px rgba(107,157,255,0.4); }
+.btn-done    { background: #F5F4F8; color: var(–gray); cursor: not-allowed; }
+.btn-penalty { background: white; color: var(–danger); border: 2px solid #FFE0E0; font-size: 14px; }
+
+.history-section { margin: 0 16px 16px; border-radius: 16px; overflow: hidden; border: 1.5px solid #F0EEF5; }
+.history-toggle { padding: 14px 16px; background: white; border: none; width: 100%; text-align: right; font-family: ‘Varela Round’, sans-serif; font-size: 14px; color: var(–gray); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.history-list { display: none; background: #FAFAF9; max-height: 200px; overflow-y: auto; }
+.history-list.open { display: block; }
+.history-item { padding: 10px 16px; font-size: 13px; display: flex; justify-content: space-between; border-top: 1px solid #F0EEF5; }
+.history-item.earn    { color: var(–success); }
+.history-item.penalty { color: var(–danger); }
+.history-item.pending { color: #FFA000; }
+
+.loading { text-align: center; padding: 60px 20px; color: var(–gray); }
+.spinner { width: 40px; height: 40px; border: 3px solid #F0EEF5; border-top-color: var(–mila); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Modal shared ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 24px 24px 0 0; padding: 28px 24px 40px; width: 100%; max-width: 480px; text-align: center; animation: slideUp 0.3s ease; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal h3 { font-family: ‘Fredoka One’, cursive; font-size: 22px; margin-bottom: 8px; }
+.modal p  { color: var(–gray); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+.modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+.modal-btns button { flex: 1; padding: 14px; border-radius: 14px; border: none; font-family: ‘Varela Round’, sans-serif; font-size: 15px; font-weight: bold; cursor: pointer; }
+.modal-cancel  { background: #F5F4F8; color: var(–gray); }
+.modal-confirm { background: var(–danger); color: white; }
+.modal-confirm-green { background: var(–success); color: white; }
+
+/* ── PIN input ── */
+.pin-display { display: flex; justify-content: center; gap: 12px; margin: 16px 0; }
+.pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #D0CDD8; background: white; transition: all 0.2s; }
+.pin-dot.filled { background: var(–text); border-color: var(–text); }
+.pin-dot.error  { background: var(–danger); border-color: var(–danger); animation: shake 0.4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 60%{transform:translateX(6px)} }
+
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+.numpad-btn {
+padding: 16px; border: none; border-radius: 14px;
+background: #F5F4F8; font-family: ‘Fredoka One’, cursive;
+font-size: 22px; cursor: pointer; transition: all 0.15s; color: var(–text);
+}
+.numpad-btn:active { transform: scale(0.93); background: #E8E6F0; }
+.numpad-btn.del { font-size: 18px; color: var(–gray); }
+.numpad-btn.empty { background: transparent; cursor: default; }
+.pin-error-msg { color: var(–danger); font-size: 13px; min-height: 18px; margin-top: 4px; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(–text); color: white; padding: 12px 22px; border-radius: 20px; font-size: 14px; z-index: 200; transition: transform 0.4s cubic-bezier(.34,1.56,.64,1); white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.confetti-piece { position: fixed; width: 10px; height: 10px; top: -20px; animation: confettiFall linear forwards; border-radius: 2px; z-index: 300; pointer-events: none; }
+@keyframes confettiFall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+.footer { text-align: center; padding: 10px; font-size: 11px; color: #D0CDD8; margin-top: 10px; }
+.reset-btn { background: none; border: none; color: #D0CDD8; font-size: 11px; cursor: pointer; text-decoration: underline; font-family: ‘Varela Round’, sans-serif; }
+</style>
+
+</head>
+<body>
+
+<div class="header">
+  <p class="eyebrow">מתמידות וזוכות 🏆</p>
+  <h1>מתי אני מקבלת את הטלפון הראשון שלי? 📱</h1>
+
+  <div class="today-badge" id="todayBadge">טוען...</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active-mila" id="tab-mila" onclick="showGirl('mila')">🌸 מילה</button>
+  <button class="tab"             id="tab-libi" onclick="showGirl('libi')">💙 ליבי</button>
+</div>
+
+<div class="content">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>טוען נתונים...</p>
+  </div>
+
+  <!-- MILA -->
+
+  <div class="girl-card mila" id="card-mila">
+    <div class="card-header mila">
+      <div class="girl-name">מילה 🌸</div>
+      <span class="phone-emoji">📱</span>
+      <div class="date-label">תאריך קבלת הטלפון:</div>
+      <div class="date-big" id="mila-date">...</div>
+    </div>
+    <div class="stats-row mila">
+      <div class="stat-box"><div class="stat-number" id="mila-days-left">-</div><div class="stat-label">ימים<br>נותרו</div></div>
+      <div class="stat-box"><div class="stat-number" id="mila-earned">0</div><div class="stat-label">ימים<br>הוקדמו</div></div>
+      <div class="stat-box"><div class="stat-number" id="mila-penalties">0</div><div class="stat-label">קנסות<br>קיבלה</div></div>
+    </div>
+    <div class="progress-section mila">
+      <div class="progress-label"><span>התקדמות</span><span id="mila-pct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="mila-bar" style="width:0%"></div></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-practice-mila" id="mila-practice-btn" onclick="startPractice('mila')">✅ סיימתי את התרגול היומי</button>
+      <button class="btn btn-penalty" onclick="openPenaltyModal('mila')">🚨 קנס התנהגות (הורים בלבד)</button>
+    </div>
+    <div class="history-section">
+      <button class="history-toggle" onclick="toggleHistory('mila')"><span>היסטוריה</span><span id="mila-hist-arrow">▼</span></button>
+      <div class="history-list" id="mila-history"></div>
+    </div>
+  </div>
+
+  <!-- LIBI -->
+
+  <div class="girl-card libi" id="card-libi">
+    <div class="card-header libi">
+      <div class="girl-name">ליבי 💙</div>
+      <span class="phone-emoji">📱</span>
+      <div class="date-label">תאריך קבלת הטלפון:</div>
+      <div class="date-big" id="libi-date">...</div>
+    </div>
+    <div class="stats-row libi">
+      <div class="stat-box"><div class="stat-number" id="libi-days-left">-</div><div class="stat-label">ימים<br>נותרו</div></div>
+      <div class="stat-box"><div class="stat-number" id="libi-earned">0</div><div class="stat-label">ימים<br>הוקדמו</div></div>
+      <div class="stat-box"><div class="stat-number" id="libi-penalties">0</div><div class="stat-label">קנסות<br>קיבלה</div></div>
+    </div>
+    <div class="progress-section libi">
+      <div class="progress-label"><span>התקדמות</span><span id="libi-pct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="libi-bar" style="width:0%"></div></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-practice-libi" id="libi-practice-btn" onclick="startPractice('libi')">✅ סיימתי את התרגול היומי</button>
+      <button class="btn btn-penalty" onclick="openPenaltyModal('libi')">🚨 קנס התנהגות (הורים בלבד)</button>
+    </div>
+    <div class="history-section">
+      <button class="history-toggle" onclick="toggleHistory('libi')"><span>היסטוריה</span><span id="libi-hist-arrow">▼</span></button>
+      <div class="history-list" id="libi-history"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PIN Modal -->
+
+<div class="modal-overlay" id="pinModal">
+  <div class="modal">
+    <h3 id="pinModalTitle">🔑 אישור הורה</h3>
+    <p id="pinModalDesc">הכנס קוד הורה לאישור התרגול</p>
+    <div class="pin-display">
+      <div class="pin-dot" id="dot0"></div>
+      <div class="pin-dot" id="dot1"></div>
+      <div class="pin-dot" id="dot2"></div>
+      <div class="pin-dot" id="dot3"></div>
+    </div>
+    <div class="pin-error-msg" id="pinError"></div>
+    <div class="numpad" dir="ltr">
+      <button class="numpad-btn" onclick="pinPress('1')">1</button>
+      <button class="numpad-btn" onclick="pinPress('2')">2</button>
+      <button class="numpad-btn" onclick="pinPress('3')">3</button>
+      <button class="numpad-btn" onclick="pinPress('4')">4</button>
+      <button class="numpad-btn" onclick="pinPress('5')">5</button>
+      <button class="numpad-btn" onclick="pinPress('6')">6</button>
+      <button class="numpad-btn" onclick="pinPress('7')">7</button>
+      <button class="numpad-btn" onclick="pinPress('8')">8</button>
+      <button class="numpad-btn" onclick="pinPress('9')">9</button>
+      <button class="numpad-btn empty"></button>
+      <button class="numpad-btn" onclick="pinPress('0')">0</button>
+      <button class="numpad-btn del" onclick="pinDelete()">⌫</button>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closePinModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Encouragement Modal -->
+
+<div class="modal-overlay" id="encourageModal">
+  <div class="modal">
+    <div style="font-size:64px;margin-bottom:8px;">🏆</div>
+    <h3 style="font-size:26px;margin-bottom:16px;">כל הכבוד!</h3>
+    <p id="encourageText" style="font-size:18px;color:#2D2640;font-weight:bold;margin-bottom:24px;line-height:1.5;"></p>
+    <p id="encourageDays" style="font-size:14px;color:#9E9BAD;margin-bottom:24px;"></p>
+    <div class="modal-btns">
+      <button class="modal-confirm-green" style="background:linear-gradient(135deg,#4CAF50,#2e7d32);color:white;font-size:18px;padding:16px;" onclick="closeEncourageModal()">אוקיי 🎉</button>
+    </div>
+  </div>
+</div>
+
+<!-- Penalty Modal -->
+
+<div class="modal-overlay" id="penaltyModal">
+  <div class="modal">
+    <h3>🚨 קנס התנהגות</h3>
+    <p id="penaltyModalText">האם אתה בטוח?</p>
+    <div class="modal-btns">
+      <button class="modal-cancel"  onclick="closeModal()">ביטול</button>
+      <button class="modal-confirm" onclick="confirmPenalty()">כן, הוסף קנס</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="footer">
+  <button class="reset-btn" onclick="confirmReset()">איפוס נתונים</button>
+</div>
+
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyDjpbhxof6ceZdhHjT5fEC3wahQujrp8Ls",
+    authDomain: "mila-libi-first-phone.firebaseapp.com",
+    projectId: "mila-libi-first-phone",
+    storageBucket: "mila-libi-first-phone.firebasestorage.app",
+    messagingSenderId: "471654253108",
+    appId: "1:471654253108:web:f8101fb705ab5a14afc061"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var db = firebase.firestore();
+
+  var PARENT_PIN = '1926';
+  var BASE_DATE  = new Date(2026, 8, 1);
+  var GIRLS      = ['mila', 'libi'];
+
+  var state = {
+    mila: { practiceLog: [], penalties: [] },
+    libi: { practiceLog: [], penalties: [] }
+  };
+  var pendingPenaltyGirl = null;
+  var pendingPracticeGirl = null;
+  var activeGirl = 'mila';
+
+  // ── PIN state ──
+  var pinValue = '';
+
+  function pinPress(digit) {
+    if (pinValue.length >= 4) return;
+    pinValue += digit;
+    updatePinDots();
+    if (pinValue.length === 4) {
+      setTimeout(checkPin, 150);
+    }
+  }
+
+  function pinDelete() {
+    pinValue = pinValue.slice(0, -1);
+    document.getElementById('pinError').textContent = '';
+    updatePinDots(false);
+  }
+
+  function updatePinDots(error) {
+    for (var i = 0; i < 4; i++) {
+      var dot = document.getElementById('dot' + i);
+      dot.className = 'pin-dot';
+      if (error) dot.classList.add('error');
+      else if (i < pinValue.length) dot.classList.add('filled');
+    }
+  }
+
+  var pinMode = 'practice'; // 'practice' or 'reset'
+
+  function checkPin() {
+    if (pinValue === PARENT_PIN) {
+      var savedMode = pinMode;
+      var savedGirl = pendingPracticeGirl;
+      closePinModal();
+      if (savedMode === 'practice' && savedGirl) {
+        logPractice(savedGirl);
+      } else if (savedMode === 'reset') {
+        state = { mila: { practiceLog: [], penalties: [] }, libi: { practiceLog: [], penalties: [] } };
+        saveToFirebase();
+        showToast('🗑️ נתונים אופסו');
+      }
+    } else {
+      updatePinDots(true);
+      document.getElementById('pinError').textContent = 'קוד שגוי, נסה שוב';
+      setTimeout(function() {
+        pinValue = '';
+        updatePinDots(false);
+        document.getElementById('pinError').textContent = '';
+      }, 900);
+    }
+  }
+
+  function openPinModal(girl, mode) {
+    pinMode = mode || 'practice';
+    pendingPracticeGirl = girl;
+    pinValue = '';
+    updatePinDots(false);
+    document.getElementById('pinError').textContent = '';
+    if (pinMode === 'reset') {
+      document.getElementById('pinModalTitle').textContent = '🗑️ איפוס נתונים';
+      document.getElementById('pinModalDesc').textContent = 'הכנס קוד הורה לאישור מחיקת כל הנתונים';
+    } else {
+      document.getElementById('pinModalTitle').textContent = '🔑 אישור הורה';
+      var name = girl === 'mila' ? 'מילה' : 'ליבי';
+      document.getElementById('pinModalDesc').textContent = 'הכנס קוד הורה לאישור תרגול יומי של ' + name;
+    }
+    document.getElementById('pinModal').classList.add('open');
+  }
+
+  function closePinModal() {
+    document.getElementById('pinModal').classList.remove('open');
+    pendingPracticeGirl = null;
+    pendingReset = false;
+    pinValue = '';
+    updatePinDots(false);
+  }
+
+  // ── Helpers ──
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function formatHebrewDate(date) {
+    var months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+    return date.getDate() + ' ב' + months[date.getMonth()] + ' ' + date.getFullYear();
+  }
+
+  function computePhoneDate(girl) {
+    var data = state[girl];
+    var earnedDays  = data.practiceLog.length;
+    var penaltyDays = data.penalties.length;
+    var netDays     = Math.max(0, earnedDays - penaltyDays);
+    var phoneDate   = new Date(BASE_DATE);
+    phoneDate.setDate(phoneDate.getDate() - netDays);
+    return { phoneDate: phoneDate, earnedDays: earnedDays, penaltyDays: penaltyDays, netDays: netDays };
+  }
+
+  function daysBetween(d1, d2) {
+    return Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24));
+  }
+
+  // ── Render ──
+  function renderAll() {
+    var today = new Date();
+    document.getElementById('todayBadge').textContent = 'היום: ' + formatHebrewDate(today);
+    GIRLS.forEach(function(girl) {
+      var r = computePhoneDate(girl);
+      var daysLeft  = Math.max(0, daysBetween(today, r.phoneDate));
+      var totalDays = daysBetween(today, BASE_DATE);
+      var pct = Math.min(100, Math.round((r.netDays / Math.max(1, totalDays)) * 100));
+      document.getElementById(girl+'-date').textContent      = formatHebrewDate(r.phoneDate);
+      document.getElementById(girl+'-days-left').textContent = daysLeft;
+      document.getElementById(girl+'-earned').textContent    = r.netDays;
+      document.getElementById(girl+'-penalties').textContent = r.penaltyDays;
+      document.getElementById(girl+'-pct').textContent       = pct + '%';
+      document.getElementById(girl+'-bar').style.width       = pct + '%';
+
+      var practicedToday = state[girl].practiceLog.indexOf(todayStr()) !== -1;
+      var btn = document.getElementById(girl+'-practice-btn');
+      if (practicedToday) {
+        btn.textContent = '✔️ כבר דווח להיום';
+        btn.className   = 'btn btn-done';
+        btn.disabled    = true;
+      } else {
+        btn.textContent = '✅ סיימתי את התרגול היומי';
+        btn.className   = 'btn btn-practice-' + girl;
+        btn.disabled    = false;
+      }
+      renderHistory(girl);
+    });
+  }
+
+  function renderHistory(girl) {
+    var container = document.getElementById(girl+'-history');
+    var events = [];
+    state[girl].practiceLog.forEach(function(d) { events.push({ date: d, type: 'earn',    label: '✅ תרגול יומי' }); });
+    state[girl].penalties.forEach(function(d)   { events.push({ date: d, type: 'penalty', label: '🚨 קנס התנהגות' }); });
+    events.sort(function(a,b) { return b.date.localeCompare(a.date); });
+    if (events.length === 0) {
+      container.innerHTML = '<div class="history-item" style="color:#ccc">אין פעולות עדיין</div>';
+      return;
+    }
+    container.innerHTML = events.map(function(e) {
+      return '<div class="history-item ' + e.type + '"><span>' + e.label + '</span><span>' + e.date + '</span></div>';
+    }).join('');
+  }
+
+  // ── Firebase ──
+  function saveToFirebase() {
+    db.collection('tracker').doc('data').set(state).catch(function(e) {
+      showToast('שגיאה בשמירה 😕');
+      console.error(e);
+    });
+  }
+
+  function listenFirebase() {
+    db.collection('tracker').doc('data').onSnapshot(function(snap) {
+      document.getElementById('loading').style.display = 'none';
+      if (snap.exists) {
+        var data = snap.data();
+        state.mila = {
+          practiceLog: (data.mila && data.mila.practiceLog) ? data.mila.practiceLog : [],
+          penalties:   (data.mila && data.mila.penalties)   ? data.mila.penalties   : []
+        };
+        state.libi = {
+          practiceLog: (data.libi && data.libi.practiceLog) ? data.libi.practiceLog : [],
+          penalties:   (data.libi && data.libi.penalties)   ? data.libi.penalties   : []
+        };
+      }
+      renderAll();
+      showGirl(activeGirl);
+    }, function(err) {
+      document.getElementById('loading').innerHTML = '<p style="color:red;padding:20px">שגיאת חיבור:<br>' + err.message + '</p>';
+      console.error(err);
+    });
+  }
+
+  // ── Encouragement messages ──
+  var ENCOURAGEMENTS = [
+    '🌟 מדהים! את מצטיינת אמיתית!',
+    '🚀 וואו, יום נוסף של אלופה!',
+    '💪 כל הכבוד על האימון — את על הדרך!',
+    '🏆 פנטסטי! עוד יום קרוב יותר לטלפון!',
+    '⭐ את גאווה של המשפחה!',
+    '🎯 מדויקת! תרגול אחרי תרגול — כך מצליחים!',
+    '🌈 עוד יום, עוד צעד קדימה — כל הכבוד!',
+    '🔥 בוערת! המשיכי כך!',
+    '💫 את עושה משהו מדהים — אל תפסיקי!',
+    '🎉 יפהפה! הטלפון מתקרב!',
+    '✨ מרשים! את מוכיחה שאפשר!',
+    '🦋 צומחת יום יום — ממש גאים בך!'
+  ];
+
+  function getEncouragement() {
+    var day = new Date().getDate();
+    return ENCOURAGEMENTS[day % ENCOURAGEMENTS.length];
+  }
+
+  // ── Actions ──
+  function startPractice(girl) {
+    var today = todayStr();
+    if (state[girl].practiceLog.indexOf(today) !== -1) return;
+    openPinModal(girl, 'practice');
+  }
+
+  function logPractice(girl) {
+    var today = todayStr();
+    if (state[girl].practiceLog.indexOf(today) !== -1) return;
+    state[girl].practiceLog.push(today);
+    saveToFirebase();
+    launchConfetti();
+    showEncourageModal(girl);
+  }
+
+  function showEncourageModal(girl) {
+    var r = computePhoneDate(girl);
+    var name = girl === 'mila' ? 'מילה' : 'ליבי';
+    document.getElementById('encourageText').textContent = getEncouragement();
+    document.getElementById('encourageDays').textContent =
+      name + ' הקדימה כבר ' + r.netDays + ' ימים! הטלפון מגיע ב־' + formatHebrewDate(r.phoneDate);
+    document.getElementById('encourageModal').classList.add('open');
+  }
+
+  function closeEncourageModal() {
+    document.getElementById('encourageModal').classList.remove('open');
+  }
+
+  function openPenaltyModal(girl) {
+    pendingPenaltyGirl = girl;
+    var name = girl === 'mila' ? 'מילה' : 'ליבי';
+    document.getElementById('penaltyModalText').innerHTML = 'האם אתה בטוח שרוצה להוסיף קנס ל' + name + '?<br>התאריך יידחה ביום אחד.';
+    document.getElementById('penaltyModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('penaltyModal').classList.remove('open');
+    pendingPenaltyGirl = null;
+  }
+
+  function confirmPenalty() {
+    if (!pendingPenaltyGirl) return;
+    state[pendingPenaltyGirl].penalties.push(todayStr());
+    saveToFirebase();
+    closeModal();
+    showToast('🚨 קנס נרשם');
+  }
+
+  function toggleHistory(girl) {
+    var list  = document.getElementById(girl+'-history');
+    var arrow = document.getElementById(girl+'-hist-arrow');
+    var open  = list.classList.toggle('open');
+    arrow.textContent = open ? '▲' : '▼';
+  }
+
+  function showGirl(girl) {
+    activeGirl = girl;
+    document.getElementById('tab-mila').className = 'tab' + (girl === 'mila' ? ' active-mila' : '');
+    document.getElementById('tab-libi').className = 'tab' + (girl === 'libi' ? ' active-libi'  : '');
+    document.getElementById('card-mila').style.display = (girl === 'mila') ? 'block' : 'none';
+    document.getElementById('card-libi').style.display = (girl === 'libi') ? 'block' : 'none';
+  }
+
+  // ── Reset with PIN ──
+  var pendingReset = false;
+
+  function confirmReset() {
+    pendingReset = true;
+    openPinModal(null, 'reset');
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 3200);
+  }
+
+  function launchConfetti() {
+    var colors = ['#FF6B9D','#6B9DFF','#FFD93D','#6BCB77','#FF9F43'];
+    for (var i = 0; i < 55; i++) {
+      (function() {
+        var el = document.createElement('div');
+        el.className = 'confetti-piece';
+        el.style.left = (Math.random()*100) + 'vw';
+        el.style.background = colors[Math.floor(Math.random()*colors.length)];
+        el.style.animationDuration = (1.2 + Math.random()*1.8) + 's';
+        el.style.animationDelay = (Math.random()*0.6) + 's';
+        el.style.width = (6 + Math.random()*8) + 'px';
+        el.style.height = (6 + Math.random()*8) + 'px';
+        el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        document.body.appendChild(el);
+        setTimeout(function() { if(el.parentNode) el.parentNode.removeChild(el); }, 3500);
+      })();
+    }
+  }
+
+  listenFirebase();
+</script>
+
+</body>
+</html>
