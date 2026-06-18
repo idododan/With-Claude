@@ -35,16 +35,8 @@
   .total-row { text-align: center; margin-bottom: 18px; }
   .total-label { font-size: 13px; color: var(--gray); }
   .total-amount { font-weight: 900; font-size: 40px; line-height: 1.1; margin-top: 2px; }
-  .split-row { display: flex; gap: 10px; }
-  .split-box { flex: 1; border-radius: 16px; padding: 14px 10px; text-align: center; }
-  .split-box.ido { background: var(--ido-light); }
-  .split-box.guy { background: var(--guy-light); }
-  .split-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
-  .split-box.ido .split-name { color: var(--ido); }
-  .split-box.guy .split-name { color: var(--guy); }
-  .split-amount { font-weight: 900; font-size: 22px; }
 
-  .balance { margin-top: 18px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(135deg, #FFE0EE, #E0EEFF); text-align: center; }
+  .balance { margin-top: 4px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(135deg, #FFE0EE, #E0EEFF); text-align: center; }
   .balance .who { font-size: 13px; color: var(--gray); }
   .balance .amt { font-weight: 900; font-size: 26px; margin-top: 2px; color: var(--text); }
 
@@ -79,10 +71,6 @@
     <div class="total-row">
       <div class="total-label">Total spent on Claude</div>
       <div class="total-amount" id="total">$0.00</div>
-    </div>
-    <div class="split-row">
-      <div class="split-box ido"><div class="split-name">Ido paid</div><div class="split-amount" id="ido-paid">$0.00</div></div>
-      <div class="split-box guy"><div class="split-name">Guy paid</div><div class="split-amount" id="guy-paid">$0.00</div></div>
     </div>
     <div class="balance">
       <div class="who">Each person's share (50%)</div>
@@ -132,17 +120,10 @@
   }
 
   function render() {
-    var total = 0, idoPaid = 0, guyPaid = 0;
+    var total = 0;
+    RECEIPTS.forEach(function(r) { total += r.amount; });
 
-    RECEIPTS.forEach(function(r) {
-      total += r.amount;
-      if (r.paidBy === "Ido") { idoPaid += r.amount; }
-      else                    { guyPaid += r.amount; }
-    });
-
-    document.getElementById("total").textContent      = fmt(total);
-    document.getElementById("ido-paid").textContent   = fmt(idoPaid);
-    document.getElementById("guy-paid").textContent   = fmt(guyPaid);
+    document.getElementById("total").textContent       = fmt(total);
     document.getElementById("balance-amt").textContent = fmt(total / 2);
 
     document.getElementById("receipt-count").textContent =
