@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Spending — split with Guy</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+  :root {
+    --ido: #FF6B9D;
+    --ido-light: #FFE0EE;
+    --guy: #6B9DFF;
+    --guy-light: #E0EEFF;
+    --bg: #FFF9F0;
+    --text: #2D2640;
+    --gray: #9E9BAD;
+    --card: #FFFFFF;
+    --shadow: 0 8px 32px rgba(45,38,64,0.10);
+    --radius: 24px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Heebo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+
+  .header { background: linear-gradient(135deg, #FF6B9D 0%, #6B9DFF 100%); padding: 28px 20px 22px; text-align: center; position: relative; overflow: hidden; }
+  .header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,0.12); }
+  .header::after  { content: ''; position: absolute; bottom: -60px; left: -30px; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+  .header .eyebrow { font-size: 13px; color: #fff; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; position: relative; z-index: 1; margin-bottom: 6px; }
+  .header h1 { font-weight: 900; font-size: 26px; color: #fff; position: relative; z-index: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.15); line-height: 1.2; }
+  .header .subtitle { color: rgba(255,255,255,0.92); font-size: 14px; margin-top: 6px; position: relative; z-index: 1; }
+
+  .content { padding: 16px; max-width: 560px; margin: 0 auto; }
+
+  /* Summary card */
+  .summary { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 20px; margin-bottom: 18px; }
+  .total-row { text-align: center; margin-bottom: 18px; }
+  .total-label { font-size: 13px; color: var(--gray); }
+  .total-amount { font-weight: 900; font-size: 40px; line-height: 1.1; margin-top: 2px; }
+  .split-row { display: flex; gap: 10px; }
+  .split-box { flex: 1; border-radius: 16px; padding: 14px 10px; text-align: center; }
+  .split-box.ido { background: var(--ido-light); }
+  .split-box.guy { background: var(--guy-light); }
+  .split-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .split-box.ido .split-name { color: var(--ido); }
+  .split-box.guy .split-name { color: var(--guy); }
+  .split-amount { font-weight: 900; font-size: 22px; }
+
+  .balance { margin-top: 18px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(135deg, #FFE0EE, #E0EEFF); text-align: center; }
+  .balance .who { font-size: 13px; color: var(--gray); }
+  .balance .amt { font-weight: 900; font-size: 26px; margin-top: 2px; color: var(--text); }
+
+  /* Receipts */
+  .section-title { font-size: 13px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin: 6px 4px 10px; }
+  .receipt { background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+  .receipt .icon { font-size: 22px; }
+  .receipt .info { flex: 1; min-width: 0; }
+  .receipt .desc { font-weight: 700; font-size: 15px; }
+  .receipt .meta { font-size: 12px; color: var(--gray); margin-top: 2px; }
+  .paid-by { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 10px; padding: 1px 8px; margin-top: 5px; }
+  .paid-by.ido { background: var(--ido-light); color: var(--ido); }
+  .paid-by.guy { background: var(--guy-light); color: var(--guy); }
+  .receipt .money { text-align: right; white-space: nowrap; }
+  .receipt .amount { font-weight: 900; font-size: 17px; }
+  .receipt .half { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  .footer { text-align: center; padding: 16px; font-size: 11px; color: #D0CDD8; }
+  .footer a { color: #B7B4C4; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p class="eyebrow">Claude spending 💸</p>
+  <h1>Claude Spending</h1>
+  <p class="subtitle">Receipts split 50/50 — Ido &amp; Guy</p>
+</div>
+
+<div class="content">
+  <div class="summary">
+    <div class="total-row">
+      <div class="total-label">Total spent on Claude</div>
+      <div class="total-amount" id="total">$0.00</div>
+    </div>
+    <div class="split-row">
+      <div class="split-box ido"><div class="split-name">Ido paid</div><div class="split-amount" id="ido-paid">$0.00</div></div>
+      <div class="split-box guy"><div class="split-name">Guy paid</div><div class="split-amount" id="guy-paid">$0.00</div></div>
+    </div>
+    <div class="balance">
+      <div class="who" id="balance-who">Settled up</div>
+      <div class="amt" id="balance-amt">$0.00</div>
+    </div>
+  </div>
+
+  <div class="section-title" id="receipts-title">Receipts</div>
+  <div id="receipts"></div>
+</div>
+
+<div class="footer">
+  <span id="receipt-count"></span> · <a href="index.html">phone tracker →</a>
+</div>
+
+<script>
+  // Real Anthropic receipts pulled from idodan@gmail.com (Mar–Jun 2026).
+  // Each Claude charge is split 50/50 between Ido and Guy.
+  var RECEIPTS = [
+    { date: "2026-06-17", amount: 15.23, desc: "Auto-recharge credits",                  receipt: "2837-4682-1304", paidBy: "Ido" },
+    { date: "2026-06-17", amount: 20.00, desc: "One-time credit purchase",                receipt: "2485-3157-9637", paidBy: "Ido" },
+    { date: "2026-06-13", amount: 90.54, desc: "Max plan – 5x (Jun 13–Jul 13)",           receipt: "2595-5003-9268", paidBy: "Ido" },
+    { date: "2026-06-07", amount:  5.00, desc: "One-time credit purchase",                receipt: "2055-4744-5590", paidBy: "Ido" },
+    { date: "2026-05-28", amount: 20.00, desc: "Claude Pro (May 28–Jun 28)",              receipt: "2727-7664-9379", paidBy: "Ido" },
+    { date: "2026-04-28", amount: 89.78, desc: "Max plan – 5x (Apr 28–May 28)",           receipt: "2564-6442-9722", paidBy: "Ido" },
+    { date: "2026-04-28", amount: 45.00, desc: "Prepaid extra usage, Individual plan",    receipt: "2756-8870-6252", paidBy: "Ido" },
+    { date: "2026-04-13", amount: 20.00, desc: "Claude Pro (Apr 13–May 13)",              receipt: "2528-0892-2975", paidBy: "Ido" },
+    { date: "2026-03-18", amount: 11.21, desc: "Auto recharge extra usage, Individual",   receipt: "2745-0946-9844", paidBy: "Ido" },
+    { date: "2026-03-18", amount:  5.00, desc: "Prepaid extra usage, Individual plan",    receipt: "2834-0651-6648", paidBy: "Ido" },
+    { date: "2026-03-18", amount:  5.00, desc: "Prepaid extra usage, Individual plan",    receipt: "2006-9180-0924", paidBy: "Ido" },
+    { date: "2026-03-18", amount:  5.00, desc: "Prepaid extra usage, Individual plan",    receipt: "2338-3261-4685", paidBy: "Ido" },
+    { date: "2026-03-13", amount: 20.00, desc: "Claude Pro (Mar 13–Apr 13)",              receipt: "2268-6793-0467", paidBy: "Ido" }
+  ];
+
+  function fmt(n) { return "$" + n.toFixed(2); }
+
+  function fmtDate(iso) {
+    var d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function render() {
+    var total = 0, idoPaid = 0, guyPaid = 0;
+    // Balance: for each receipt the non-payer owes the payer half.
+    // Positive => Guy owes Ido; negative => Ido owes Guy.
+    var guyOwesIdo = 0;
+
+    RECEIPTS.forEach(function(r) {
+      total += r.amount;
+      var half = r.amount / 2;
+      if (r.paidBy === "Ido") { idoPaid += r.amount; guyOwesIdo += half; }
+      else                    { guyPaid += r.amount; guyOwesIdo -= half; }
+    });
+
+    document.getElementById("total").textContent    = fmt(total);
+    document.getElementById("ido-paid").textContent = fmt(idoPaid);
+    document.getElementById("guy-paid").textContent = fmt(guyPaid);
+
+    var who = document.getElementById("balance-who");
+    var amt = document.getElementById("balance-amt");
+    if (Math.abs(guyOwesIdo) < 0.005) {
+      who.textContent = "All settled up 🎉";
+      amt.textContent = fmt(0);
+    } else if (guyOwesIdo > 0) {
+      who.textContent = "Guy owes Ido";
+      amt.textContent = fmt(guyOwesIdo);
+    } else {
+      who.textContent = "Ido owes Guy";
+      amt.textContent = fmt(-guyOwesIdo);
+    }
+
+    document.getElementById("receipt-count").textContent =
+      RECEIPTS.length + " receipts · " + fmt(total) + " total";
+    document.getElementById("receipts-title").textContent =
+      "Receipts (" + RECEIPTS.length + ")";
+
+    var container = document.getElementById("receipts");
+    container.innerHTML = RECEIPTS.map(function(r) {
+      var cls = r.paidBy === "Ido" ? "ido" : "guy";
+      return '<div class="receipt">' +
+        '<div class="icon">🧾</div>' +
+        '<div class="info">' +
+          '<div class="desc">' + r.desc + '</div>' +
+          '<div class="meta">' + fmtDate(r.date) + ' · #' + r.receipt + '</div>' +
+          '<span class="paid-by ' + cls + '">Paid by ' + r.paidBy + '</span>' +
+        '</div>' +
+        '<div class="money">' +
+          '<div class="amount">' + fmt(r.amount) + '</div>' +
+          '<div class="half">' + fmt(r.amount / 2) + ' each</div>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  render();
+</script>
+</body>
+</html>
