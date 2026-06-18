@@ -32,13 +32,9 @@
 
   /* Summary card */
   .summary { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 20px; margin-bottom: 18px; }
-  .total-row { text-align: center; margin-bottom: 18px; }
+  .total-row { text-align: center; }
   .total-label { font-size: 13px; color: var(--gray); }
   .total-amount { font-weight: 900; font-size: 40px; line-height: 1.1; margin-top: 2px; }
-
-  .balance { margin-top: 4px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(135deg, #FFE0EE, #E0EEFF); text-align: center; }
-  .balance .who { font-size: 13px; color: var(--gray); }
-  .balance .amt { font-weight: 900; font-size: 26px; margin-top: 2px; color: var(--text); }
 
   /* Receipts */
   .section-title { font-size: 13px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin: 6px 4px 10px; }
@@ -68,10 +64,6 @@
     <div class="total-row">
       <div class="total-label">Total spent on Claude</div>
       <div class="total-amount" id="total">$0.00</div>
-    </div>
-    <div class="balance">
-      <div class="who">Each person's share (50%)</div>
-      <div class="amt" id="balance-amt">$0.00</div>
     </div>
   </div>
 
@@ -120,8 +112,7 @@
     var total = 0;
     RECEIPTS.forEach(function(r) { total += r.amount; });
 
-    document.getElementById("total").textContent       = fmt(total);
-    document.getElementById("balance-amt").textContent = fmt(total / 2);
+    document.getElementById("total").textContent = fmt(total);
 
     document.getElementById("receipt-count").textContent =
       RECEIPTS.length + " receipts · " + fmt(total) + " total";
