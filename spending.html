@@ -85,7 +85,7 @@
       <div class="split-box guy"><div class="split-name">Guy paid</div><div class="split-amount" id="guy-paid">$0.00</div></div>
     </div>
     <div class="balance">
-      <div class="who" id="balance-who">Settled up</div>
+      <div class="who">Each person's share (50%)</div>
       <div class="amt" id="balance-amt">$0.00</div>
     </div>
   </div>
@@ -133,33 +133,17 @@
 
   function render() {
     var total = 0, idoPaid = 0, guyPaid = 0;
-    // Balance: for each receipt the non-payer owes the payer half.
-    // Positive => Guy owes Ido; negative => Ido owes Guy.
-    var guyOwesIdo = 0;
 
     RECEIPTS.forEach(function(r) {
       total += r.amount;
-      var half = r.amount / 2;
-      if (r.paidBy === "Ido") { idoPaid += r.amount; guyOwesIdo += half; }
-      else                    { guyPaid += r.amount; guyOwesIdo -= half; }
+      if (r.paidBy === "Ido") { idoPaid += r.amount; }
+      else                    { guyPaid += r.amount; }
     });
 
-    document.getElementById("total").textContent    = fmt(total);
-    document.getElementById("ido-paid").textContent = fmt(idoPaid);
-    document.getElementById("guy-paid").textContent = fmt(guyPaid);
-
-    var who = document.getElementById("balance-who");
-    var amt = document.getElementById("balance-amt");
-    if (Math.abs(guyOwesIdo) < 0.005) {
-      who.textContent = "All settled up 🎉";
-      amt.textContent = fmt(0);
-    } else if (guyOwesIdo > 0) {
-      who.textContent = "Guy owes Ido";
-      amt.textContent = fmt(guyOwesIdo);
-    } else {
-      who.textContent = "Ido owes Guy";
-      amt.textContent = fmt(-guyOwesIdo);
-    }
+    document.getElementById("total").textContent      = fmt(total);
+    document.getElementById("ido-paid").textContent   = fmt(idoPaid);
+    document.getElementById("guy-paid").textContent   = fmt(guyPaid);
+    document.getElementById("balance-amt").textContent = fmt(total / 2);
 
     document.getElementById("receipt-count").textContent =
       RECEIPTS.length + " receipts · " + fmt(total) + " total";
