@@ -42,6 +42,11 @@
   .total-row { text-align: center; }
   .total-label { font-size: 13px; color: var(--gray); }
   .total-amount { font-weight: 900; font-size: 40px; line-height: 1.1; margin-top: 2px; }
+  .divider { height: 1px; background: #F0EEF5; margin: 18px 0; }
+  .balance-row { text-align: center; }
+  .balance-label { font-size: 13px; color: var(--gray); }
+  .balance-amount { font-weight: 900; font-size: 30px; line-height: 1.1; margin-top: 2px; }
+  .settle-note { margin-top: 14px; background: #E8F5E9; color: #2e7d32; border-radius: 14px; padding: 10px 14px; font-size: 13px; font-weight: 700; text-align: center; line-height: 1.4; }
 
   /* Receipts */
   .section-title { font-size: 13px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin: 6px 4px 10px; }
@@ -75,6 +80,12 @@
       <div class="total-label">Total spent on Claude</div>
       <div class="total-amount" id="total">$0.00</div>
     </div>
+    <div class="divider"></div>
+    <div class="balance-row">
+      <div class="balance-label" id="balance-label">Guy owes Ido</div>
+      <div class="balance-amount" id="balance-amount">$0.00</div>
+    </div>
+    <div class="settle-note" id="settle-note" style="display:none"></div>
   </div>
 
   <div class="section-title" id="receipts-title">Receipts</div>
@@ -115,6 +126,13 @@
   // Only receipts on or after the accounting start date count.
   var RECEIPTS = ALL_RECEIPTS.filter(function(r) { return r.date >= ACCOUNTING_START; });
 
+  // Payments Guy has made toward his 50% share. Each one resets the balance:
+  // current balance = (total spent / 2) − everything Guy has already paid, so
+  // new receipts start a fresh balance from the last settlement.
+  var SETTLEMENTS = [
+    { date: "2026-06-18", by: "Guy", amount: 65.39, note: "his half of the first $130.77" }
+  ];
+
   function fmt(n) { return "$" + n.toFixed(2); }
 
   function fmtDate(iso) {
@@ -125,8 +143,36 @@
   function render() {
     var total = 0;
     RECEIPTS.forEach(function(r) { total += r.amount; });
-
     document.getElementById("total").textContent = fmt(total);
+
+    // Guy's running balance: half of everything spent, minus what he's paid.
+    var guyPaid = 0;
+    SETTLEMENTS.forEach(function(s) { if (s.by === "Guy") guyPaid += s.amount; });
+    var guyOwes = total / 2 - guyPaid;
+
+    var label = document.getElementById("balance-label");
+    var amt   = document.getElementById("balance-amount");
+    if (Math.abs(guyOwes) < 0.01) {
+      label.textContent = "All settled up 🎉";
+      amt.textContent   = fmt(0);
+    } else if (guyOwes > 0) {
+      label.textContent = "Guy owes Ido";
+      amt.textContent   = fmt(guyOwes);
+    } else {
+      label.textContent = "Ido owes Guy";
+      amt.textContent   = fmt(-guyOwes);
+    }
+
+    var note = document.getElementById("settle-note");
+    var guySettlements = SETTLEMENTS.filter(function(s) { return s.by === "Guy"; });
+    if (guySettlements.length) {
+      var last = guySettlements[guySettlements.length - 1];
+      note.style.display = "block";
+      note.textContent = "✅ Guy paid " + fmt(last.amount) + " on " + fmtDate(last.date) +
+        " — new balance counts from here.";
+    } else {
+      note.style.display = "none";
+    }
 
     document.getElementById("receipt-count").textContent =
       RECEIPTS.length + " receipts · " + fmt(total) + " total";
