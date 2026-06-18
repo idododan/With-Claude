@@ -71,7 +71,7 @@
 <div class="header">
   <p class="eyebrow">Claude spending 💸</p>
   <h1>Claude Spending</h1>
-  <p class="subtitle">Receipts split 50/50 — Ido &amp; Guy</p>
+  <p class="subtitle">Receipts split 50/50 — Ido &amp; Guy · since Jun 7, 2026</p>
 </div>
 
 <div class="content">
@@ -99,9 +99,13 @@
 </div>
 
 <script>
+  // Accounting between Ido and Guy starts on this date — earlier charges are
+  // kept for record but excluded from the totals and the split.
+  var ACCOUNTING_START = "2026-06-07";
+
   // Real Anthropic receipts pulled from idodan@gmail.com (Mar–Jun 2026).
   // Each Claude charge is split 50/50 between Ido and Guy.
-  var RECEIPTS = [
+  var ALL_RECEIPTS = [
     { date: "2026-06-17", amount: 15.23, desc: "Auto-recharge credits",                  receipt: "2837-4682-1304", paidBy: "Ido" },
     { date: "2026-06-17", amount: 20.00, desc: "One-time credit purchase",                receipt: "2485-3157-9637", paidBy: "Ido" },
     { date: "2026-06-13", amount: 90.54, desc: "Max plan – 5x (Jun 13–Jul 13)",           receipt: "2595-5003-9268", paidBy: "Ido" },
@@ -116,6 +120,9 @@
     { date: "2026-03-18", amount:  5.00, desc: "Prepaid extra usage, Individual plan",    receipt: "2338-3261-4685", paidBy: "Ido" },
     { date: "2026-03-13", amount: 20.00, desc: "Claude Pro (Mar 13–Apr 13)",              receipt: "2268-6793-0467", paidBy: "Ido" }
   ];
+
+  // Only receipts on or after the accounting start date count.
+  var RECEIPTS = ALL_RECEIPTS.filter(function(r) { return r.date >= ACCOUNTING_START; });
 
   function fmt(n) { return "$" + n.toFixed(2); }
 
