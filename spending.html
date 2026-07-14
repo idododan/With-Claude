@@ -108,6 +108,18 @@
   // Real Anthropic receipts pulled from idodan@gmail.com (Mar–Jun 2026).
   // Each Claude charge is split 50/50 between Ido and Guy.
   var ALL_RECEIPTS = [
+    { date: "2026-07-14", amount: 10.29, desc: "Auto-recharge credits",                  receipt: "2872-6708-2120", paidBy: "Ido" },
+    { date: "2026-07-13", amount: 100.00, desc: "Max plan – 5x (Jul 13–Aug 13)",          receipt: "2255-1861-9763", paidBy: "Ido" },
+    { date: "2026-07-13", amount: 10.11, desc: "Auto-recharge credits",                  receipt: "2529-0900-1189", paidBy: "Ido" },
+    { date: "2026-07-12", amount: 15.76, desc: "Auto recharge extra usage, Individual",   receipt: "2625-6512-4080", paidBy: "Ido" },
+    { date: "2026-07-09", amount: 17.51, desc: "Auto recharge extra usage, Individual",   receipt: "2848-5968-3195", paidBy: "Ido" },
+    { date: "2026-07-04", amount: 11.58, desc: "Auto recharge extra usage, Individual",   receipt: "2173-3028-9439", paidBy: "Ido" },
+    { date: "2026-06-28", amount: 10.11, desc: "Auto-recharge credits",                  receipt: "2854-4435-0055", paidBy: "Ido" },
+    { date: "2026-06-23", amount: 10.06, desc: "Auto-recharge credits",                  receipt: "2778-6990-3362", paidBy: "Ido" },
+    { date: "2026-06-20", amount: 10.73, desc: "Auto-recharge credits",                  receipt: "2574-6697-3096", paidBy: "Ido" },
+    { date: "2026-06-18", amount: 10.89, desc: "Auto-recharge credits",                  receipt: "2649-5554-0746", paidBy: "Ido" },
+    { date: "2026-06-18", amount: 10.54, desc: "Auto-recharge credits",                  receipt: "2990-2991-9589", paidBy: "Ido" },
+    { date: "2026-06-18", amount: 11.36, desc: "Auto-recharge credits",                  receipt: "2421-9425-6023", paidBy: "Ido" },
     { date: "2026-06-17", amount: 15.23, desc: "Auto-recharge credits",                  receipt: "2837-4682-1304", paidBy: "Ido" },
     { date: "2026-06-17", amount: 20.00, desc: "One-time credit purchase",                receipt: "2485-3157-9637", paidBy: "Ido" },
     { date: "2026-06-13", amount: 90.54, desc: "Max plan – 5x (Jun 13–Jul 13)",           receipt: "2595-5003-9268", paidBy: "Ido" },
@@ -130,7 +142,8 @@
   // current balance = (total spent / 2) − everything Guy has already paid, so
   // new receipts start a fresh balance from the last settlement.
   var SETTLEMENTS = [
-    { date: "2026-06-18", by: "Guy", amount: 65.39, note: "his half of the first $130.77" }
+    { date: "2026-06-18", by: "Guy", amount: 65.39, note: "his half of the first $130.77" },
+    { date: "2026-07-14", by: "Guy", amount: 115.17, ils: 347, rate: 3.0129, note: "₪347 for his half of Jun–Jul spending" }
   ];
 
   function fmt(n) { return "$" + n.toFixed(2); }
@@ -152,7 +165,7 @@
 
     var label = document.getElementById("balance-label");
     var amt   = document.getElementById("balance-amount");
-    if (Math.abs(guyOwes) < 0.01) {
+    if (Math.abs(guyOwes) < 1) {   // within currency-conversion noise
       label.textContent = "All settled up 🎉";
       amt.textContent   = fmt(0);
     } else if (guyOwes > 0) {
@@ -167,8 +180,9 @@
     var guySettlements = SETTLEMENTS.filter(function(s) { return s.by === "Guy"; });
     if (guySettlements.length) {
       var last = guySettlements[guySettlements.length - 1];
+      var paidStr = last.ils ? ("₪" + last.ils + " (~" + fmt(last.amount) + ")") : fmt(last.amount);
       note.style.display = "block";
-      note.textContent = "✅ Guy paid " + fmt(last.amount) + " on " + fmtDate(last.date) +
+      note.textContent = "✅ Guy paid " + paidStr + " on " + fmtDate(last.date) +
         " — new balance counts from here.";
     } else {
       note.style.display = "none";
