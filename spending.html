@@ -141,10 +141,45 @@
   // Payments Guy has made toward his 50% share. Each one resets the balance:
   // current balance = (total spent / 2) − everything Guy has already paid, so
   // new receipts start a fresh balance from the last settlement.
+  // Payments made in shekels use `ils`; they are converted to USD at the live
+  // rate fetched below. Payments already in dollars use `amount`.
   var SETTLEMENTS = [
     { date: "2026-06-18", by: "Guy", amount: 65.39, note: "his half of the first $130.77" },
-    { date: "2026-07-14", by: "Guy", amount: 115.17, ils: 347, rate: 3.0129, note: "₪347 for his half of Jun–Jul spending" }
+    { date: "2026-07-14", by: "Guy", ils: 347,      note: "his half of Jun–Jul spending" }
   ];
+
+  // USD/ILS exchange rate. Fetched live at load from a free, no-key, CORS API;
+  // FALLBACK_RATE (last known) is used if the network request fails.
+  var FALLBACK_RATE = 3.0129;
+  var fx = { ilsPerUsd: FALLBACK_RATE, date: null, live: false };
+
+  function fetchRate() {
+    // Primary: Frankfurter (ECB data). Fallback: open.er-api.com.
+    fetch("https://api.frankfurter.app/latest?from=USD&to=ILS")
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.rates || !d.rates.ILS) throw new Error("no rate");
+        fx = { ilsPerUsd: d.rates.ILS, date: d.date, live: true };
+        render();
+      })
+      .catch(function () {
+        return fetch("https://open.er-api.com/v6/latest/USD")
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d || !d.rates || !d.rates.ILS) throw new Error("no rate");
+            fx = { ilsPerUsd: d.rates.ILS,
+                   date: (d.time_last_update_utc || "").slice(0, 16), live: true };
+            render();
+          })
+          .catch(function () { /* keep fallback rate */ });
+      });
+  }
+
+  // Convert a settlement to USD (shekel payments use the live rate).
+  function settlementUsd(s) {
+    if (typeof s.ils === "number") return s.ils / fx.ilsPerUsd;
+    return s.amount || 0;
+  }
 
   function fmt(n) { return "$" + n.toFixed(2); }
 
@@ -160,7 +195,7 @@
 
     // Guy's running balance: half of everything spent, minus what he's paid.
     var guyPaid = 0;
-    SETTLEMENTS.forEach(function(s) { if (s.by === "Guy") guyPaid += s.amount; });
+    SETTLEMENTS.forEach(function(s) { if (s.by === "Guy") guyPaid += settlementUsd(s); });
     var guyOwes = total / 2 - guyPaid;
 
     var label = document.getElementById("balance-label");
@@ -180,10 +215,17 @@
     var guySettlements = SETTLEMENTS.filter(function(s) { return s.by === "Guy"; });
     if (guySettlements.length) {
       var last = guySettlements[guySettlements.length - 1];
-      var paidStr = last.ils ? ("₪" + last.ils + " (~" + fmt(last.amount) + ")") : fmt(last.amount);
+      var paidStr, rateStr = "";
+      if (typeof last.ils === "number") {
+        paidStr = "₪" + last.ils + " (~" + fmt(settlementUsd(last)) + ")";
+        rateStr = " · 1 USD = ₪" + fx.ilsPerUsd.toFixed(4) +
+          (fx.live ? (fx.date ? " (" + fx.date + ")" : " (live)") : " (offline rate)");
+      } else {
+        paidStr = fmt(last.amount);
+      }
       note.style.display = "block";
       note.textContent = "✅ Guy paid " + paidStr + " on " + fmtDate(last.date) +
-        " — new balance counts from here.";
+        " — new balance counts from here." + rateStr;
     } else {
       note.style.display = "none";
     }
@@ -209,7 +251,8 @@
     }).join("");
   }
 
-  render();
+  render();       // paint immediately with the fallback rate
+  fetchRate();    // then refresh once the live USD/ILS rate arrives
 
   // ── Toast ──
   var toastTimer;
