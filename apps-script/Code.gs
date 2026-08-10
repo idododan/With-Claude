@@ -31,8 +31,11 @@ function doGet(e) {
 }
 
 function fetchReceipts() {
+  // Only search mail from the accounting start onward — far fewer threads to
+  // read than a blanket 2-year search, which keeps the response fast.
+  var after = ACCOUNTING_START.replace(/-/g, '/'); // yyyy/MM/dd for Gmail
   var threads = GmailApp.search(
-    'from:invoice+statements@mail.anthropic.com newer_than:2y');
+    'from:invoice+statements@mail.anthropic.com after:' + after);
   var byNumber = {}; // dedupe on receipt number
 
   threads.forEach(function (thread) {
