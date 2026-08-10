@@ -193,22 +193,29 @@
     RECEIPTS.forEach(function(r) { total += r.amount; });
     document.getElementById("total").textContent = fmt(total);
 
-    // Guy's running balance: half of everything spent, minus what he's paid.
-    var guyPaid = 0;
-    SETTLEMENTS.forEach(function(s) { if (s.by === "Guy") guyPaid += settlementUsd(s); });
-    var guyOwes = total / 2 - guyPaid;
+    // Balance counts ONLY spending after Guy's most recent payment — each
+    // payment resets the ledger, so the balance is just half of the receipts
+    // dated after that payment.
+    var lastPayDate = null;
+    SETTLEMENTS.forEach(function(s) {
+      if (s.by === "Guy" && (!lastPayDate || s.date > lastPayDate)) lastPayDate = s.date;
+    });
+    var newSpend = 0;
+    RECEIPTS.forEach(function(r) {
+      if (!lastPayDate || r.date > lastPayDate) newSpend += r.amount;
+    });
+    var guyOwes = newSpend / 2;
 
     var label = document.getElementById("balance-label");
     var amt   = document.getElementById("balance-amount");
-    if (Math.abs(guyOwes) < 1) {   // within currency-conversion noise
+    if (guyOwes < 0.01) {
       label.textContent = "All settled up 🎉";
       amt.textContent   = fmt(0);
-    } else if (guyOwes > 0) {
-      label.textContent = "Guy owes Ido";
-      amt.textContent   = fmt(guyOwes);
     } else {
-      label.textContent = "Ido owes Guy";
-      amt.textContent   = fmt(-guyOwes);
+      label.textContent = lastPayDate
+        ? "Guy owes Ido · since " + fmtDate(lastPayDate)
+        : "Guy owes Ido";
+      amt.textContent   = fmt(guyOwes);
     }
 
     var note = document.getElementById("settle-note");
